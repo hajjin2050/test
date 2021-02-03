@@ -1,0 +1,146 @@
+import pandas as pd
+
+csv_train = pd.read_csv('C:/data/dacon/mnist1/data/train.csv')
+csv_test = pd.read_csv('C:/data/dacon/mnist1/data/test.csv')
+
+#label ('digit')
+train['digit'].value_counts()
+# drop columns
+train2 = train.drop(['id','digit','letter'],1)
+test2 = test.drop(['id','letter'],1)
+# convert pandas dataframe to numpy array
+train2 = train2.values
+test2 = test2.values
+
+
+
+# train 이미지들과 test 이미지들을 저장해놓을 폴더를 생성합니다.
+!mkdir images_train
+!mkdir images_train/0
+!mkdir images_train/1
+!mkdir images_train/2
+!mkdir images_train/3
+!mkdir images_train/4
+!mkdir images_train/5
+!mkdir images_train/6
+!mkdir images_train/7
+!mkdir images_train/8
+!mkdir images_train/9
+!mkdir images_test
+
+import cv2
+
+for idx in range(len(csv_train)) :
+    img = csv_train.loc[idx, '0':].values.reshape(28, 28).astype(int)
+    digit = csv_train.loc[idx, 'digit'] #라벨링
+    cv2.imwrite(f'./images_train/{digit}/{csv_train["id"][idx]}.png', img)
+
+for idx in range(len(csv_test)) :
+    img = csv_test.loc[idx, '0':].values.reshape(28, 28).astype(int)
+    cv2.imwrite(f'./images_test/{csv_test["id"][idx]}.png', img)
+
+
+
+
+import tensorflow as tf
+
+model_1 = tf.keras.applications.InceptionResNetV2(weights=None, include_top=True, input_shape=(224, 224, 1), classes=10)
+
+model_2 = tf.keras.Sequential([
+                               tf.keras.applications.InceptionV3(weights=None, include_top=False, input_shape=(224, 224, 1)),
+                               tf.keras.layers.GlobalAveragePooling2D(),
+                               tf.keras.layers.Dense(1024, kernel_initializer='he_normal'),
+                               tf.keras.layers.BatchNormalization(),
+                               tf.keras.layers.Activation('relu'),
+                               tf.keras.layers.Dense(512, kernel_initializer='he_normal'),
+                               tf.keras.layers.BatchNormalization(),
+                               tf.keras.layers.Activation('relu'),
+                               tf.keras.layers.Dense(256, kernel_initializer='he_normal'),
+                               tf.keras.layers.BatchNormalization(),
+                               tf.keras.layers.Activation('relu'),
+                               tf.keras.layers.Dense(10, kernel_initializer='he_normal', activation='softmax', name='predictions')
+                               ])
+
+model_3 = tf.keras.Sequential([
+                               tf.keras.applications.Xception(weights=None, include_top=False, input_shape=(224, 224, 1)),
+                               tf.keras.layers.GlobalAveragePooling2D(),
+                               tf.keras.layers.Dense(1024, kernel_initializer='he_normal'),
+                               tf.keras.layers.BatchNormalization(),
+                               tf.keras.layers.Activation('relu'),
+                               tf.keras.layers.Dense(512, kernel_initializer='he_normal'),
+                               tf.keras.layers.BatchNormalization(),
+                               tf.keras.layers.Activation('relu'),
+                               tf.keras.layers.Dense(256, kernel_initializer='he_normal'),
+                               tf.keras.layers.BatchNormalization(),
+                               tf.keras.layers.Activation('relu'),
+                               tf.keras.layers.Dense(10, kernel_initializer='he_normal', activation='softmax', name='predictions')
+                               ])
+
+model_1.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+model_2.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+model_3.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+datagen = ImageDataGenerator(rescale=1./255, validation_split=0.2,
+                             rotation_range=10,
+                             width_shift_range=0.1,
+                             height_shift_range=0.1)
+
+train_generator = datagen.flow_from_directory('./images_train', target_size=(224,224), color_mode='grayscale', class_mode='categorical', subset='training')
+val_generator = datagen.flow_from_directory('./images_train', target_size=(224,224), color_mode='grayscale', class_mode='categorical', subset='validation')
+
+checkpoint_1 = tf.keras.callbacks.ModelCheckpoint(f'./drive/My Drive/데이콘/model_1.h5', monitor='val_accuracy', save_best_only=True, verbose=1)
+checkpoint_2 = tf.keras.callbacks.ModelCheckpoint(f'./drive/My Drive/데이콘/model_2.h5', monitor='val_accuracy', save_best_only=True, verbose=1)
+checkpoint_3 = tf.keras.callbacks.ModelCheckpoint(f'./drive/My Drive/데이콘/model_3.h5', monitor='val_accuracy', save_best_only=True, verbose=1)
+
+model_1.fit_generator(train_generator, epochs=500, validation_data=val_generator, callbacks=[checkpoint_1])
+model_2.fit_generator(train_generator, epochs=500, validation_data=val_generator, callbacks=[checkpoint_2])
+model_3.fit_generator(train_generator, epochs=500, validation_data=val_generator, callbacks=[checkpoint_3])
+
+import matplotlib.pyplot as plt
+
+plt.plot(model_1.history.history["accuracy"], label='m1_acc')
+plt.plot(model_1.history.history["val_accuracy"], label='m1_vacc')
+
+plt.plot(model_2.history.history["accuracy"], label='m2_acc')
+plt.plot(model_2.history.history["val_accuracy"], label='m2_vacc')
+
+plt.plot(model_3.history.history["accuracy"], label='m3_acc')
+plt.plot(model_3.history.history["val_accuracy"], label='m3_acc')
+
+plt.legend()
+plt.show()
+
+model_1 = tf.keras.models.load_model('./drive/My Drive/데이콘/model_1.h5', compile=False)
+model_2 = tf.keras.models.load_model('./drive/My Drive/데이콘/model_2.h5', compile=False)
+model_3 = tf.keras.models.load_model('./drive/My Drive/데이콘/model_3.h5', compile=False)
+
+!mkdir images_test/none
+!mv images_test/*.png images_test/none
+datagen = ImageDataGenerator(rescale=1./255)
+test_generator = datagen.flow_from_directory('./images_test', target_size=(224,224), color_mode='grayscale',class_mode='categorical', shuffle=False) 
+
+predict_1 = model_1.predict_generator(test_generator).argmax(axis=1)
+predict_2 = model_2.predict_generator(test_generator).argmax(axis=1)
+predict_3 = model_3.predict_generator(test_generator).argmax(axis=1)
+
+submission = pd.read_csv('./data/submission.csv')
+submission.head()
+
+submission["predict_1"] = predict_1
+submission["predict_2"] = predict_2
+submission["predict_3"] = predict_3
+submission.head()
+
+from collections import Counter
+
+for i in range(len(submission)) :
+    predicts = submission.loc[i, ['predict_1','predict_2','predict_3']]
+    submission.at[i, "digit"] = Counter(predicts).most_common(n=1)[0][0]
+
+submission.head()
+submission = submission[['id', 'digit']]
+submission.head()
+
+submission.to_csv('C:/data/dacon/mnist1/submit/20210223_2.csv', index=False)
