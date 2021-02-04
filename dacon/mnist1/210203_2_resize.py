@@ -50,17 +50,6 @@ for i in range(9) :
     sample_batch = sample_generator.next()
     sample_image=sample_batch[0]
     plt.imshow(sample_image.reshape(28,28))
-    
-import cv2
-
-for idx in range(len(csv_train)) :
-    img = csv_train.loc[idx, '0':].values.reshape(28, 28).astype(int)
-    digit = csv_train.loc[idx, 'digit'] #라벨링
-    cv2.imwrite(f'./images_train/{digit}/{csv_train["id"][idx]}.png', img)
-
-for idx in range(len(csv_test)) :
-    img = csv_test.loc[idx, '0':].values.reshape(28, 28).astype(int)
-    cv2.imwrite(f'./images_test/{csv_test["id"][idx]}.png', img)
 
 # cross validation
 skf = StratifiedKFold(n_splits=40, random_state=42, shuffle=True)
@@ -83,7 +72,7 @@ for train_index, valid_index in skf.split(train2,train['digit']) :
     train_generator = idg.flow(x_train,y_train,batch_size=8)
     valid_generator = idg2.flow(x_valid,y_valid)
     test_generator = idg2.flow(test2,shuffle=False)
-
+    
 datagen = ImageDataGenerator(rescale=1./255, validation_split=0.2,
                              rotation_range=10,
                              width_shift_range=0.1,
