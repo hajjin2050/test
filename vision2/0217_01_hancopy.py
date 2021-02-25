@@ -19,25 +19,6 @@ tf.debugging.set_log_device_placement(True)
 # 생각보다 값이 좋지 못함 
 # 훈련 데이터의 양은 예전보다 많아짐 대략 a -> 800개 
 
-# 이유 예상 
-
-# 1. 이미지 전처리 문제 
-# 2. ImageDataGenerator 파라미터값들 수정
-# 3. 모델이 구림
-
-# 하나하나 처리해볼 것
-
-
-# 문제 발생 
-
-# 이진 분류로 y값을 0,1로 주었는데 
-# 결과는 왜? 다르게 나오는가??
-# 결과가 너무 안나온다 !!!!!!!!!!!!!!!!!!!!!!!!
-
-# 전처리는 cv2로 했다고 생각 함
-# 모델을 수정해보자
-
-
 '''
 alphabets = string.ascii_lowercase
 alphabets = list(alphabets)
@@ -163,11 +144,11 @@ model.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.002,epsilon=None),
 
 reLR = ReduceLROnPlateau(patience=100,verbose=1,factor=0.5) #learning rate scheduler
 es = EarlyStopping(patience=160, verbose=1)
-mc = ModelCheckpoint('C:/data/dacon/mnist2/cp/best_cvision.h5',save_best_only=True, verbose=1)
+mc = ModelCheckpoint('C:/data/dacon/mnist2/mc/0220_0.h5',save_best_only=True, verbose=1)
 
 learning_history = model.fit_generator(train_generator, epochs=2000, validation_data=val_generator , callbacks=[es,mc,reLR])
 
-model.save('C:/data/dacon/mnist2/cp/dacon_a.h5')
+model.save('C:/data/dacon/mnist2/mc/dacon_0220_0.h5')
 
 '''
 model = load_model('../data/vision2/cp/dacon_a.h5', compile = False)
