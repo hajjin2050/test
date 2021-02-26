@@ -70,7 +70,7 @@ rnd_search_cv.fit(x_train_scaled[:], y_train[:])
 
 print(x_train_scaled.shape)
 print(x_test_scaled)
-'''
+
 #평가
 rnd_search_cv.best_score_
 rnd_search_cv.best_estimator_.fit(x_train_scaled, y_train)
@@ -81,4 +81,3 @@ sub = pd.read_csv('C:/data/dacon/mnist2/sample_submission.csv')
 sub['a'] = np.where(y_pred> 0.5, 1, 0)
 
 sub.to_csv('C:/data/dacon/mnist2/0217_0.csv', index = False)
-'''
