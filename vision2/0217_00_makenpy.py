@@ -19,7 +19,6 @@ for i in range(50000):
     image3 = cv2.dilate(image2, kernel=np.ones((2, 2), np.uint8), iterations=1)
     image_data = cv2.medianBlur(src=image3, ksize= 5)  #점처럼 놓여있는  noise들을 제거할수있음
     image_data = cv2.resize(image_data, (128, 128))
-    cv2.fastNlMeansDenoisingColored(image_data, None, 15,15,5,9)
     # image_data = np.array(image_data)
     # img.append(image_data)
     pp.imshow(image_data, cmap='gray')

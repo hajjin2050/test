@@ -136,8 +136,8 @@ for fold in range(1):
         ])
 
 
-    epochs=15
-    batch_size=2        # 자신의 VRAM에 맞게 조절해야 OOM을 피할 수 있습니다.
+    epochs=25
+    batch_size = 16      # 자신의 VRAM에 맞게 조절해야 OOM을 피할 수 있습니다.
     
     
     
