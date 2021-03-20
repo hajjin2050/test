@@ -6,13 +6,14 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator, load_img
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, Conv2D, MaxPooling2D, BatchNormalization, Flatten, Dropout
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
+from tensorflow.keras.applications import VGG19, MobileNet
 
 #0. 변수
 batch = 16
 seed = 42
 dropout = 0.3
 epochs = 1000
-model_path = 'C:/workspace/lotte/h5/lpd_001.hdf5'
+model_path = 'C:/workspace/lotte/h5/lotte_0318_{epoch:02d}-{val_loss:,4f}.hdf5'
 sub = pd.read_csv('C:/workspace/lotte/sample.csv', header = 0)
 es = EarlyStopping(patience = 5)
 lr = ReduceLROnPlateau(factor = 0.25, patience = 3, verbose = 1)
@@ -33,7 +34,7 @@ test_gen = ImageDataGenerator(
 # Found 39000 images belonging to 1000 classes.
 train_data = train_gen.flow_from_directory(
     'C:/workspace/lotte/train',
-    target_size = (224, 224),
+    target_size = (128, 128),
     class_mode = 'sparse',
     batch_size = batch,
     seed = seed,
@@ -43,7 +44,7 @@ train_data = train_gen.flow_from_directory(
 # Found 9000 images belonging to 1000 classes.
 val_data = train_gen.flow_from_directory(
     'C:/workspace/lotte/train',
-    target_size = (224, 224),
+    target_size = (128, 128),
     class_mode = 'sparse',
     batch_size = batch,
     seed = seed,
@@ -53,21 +54,26 @@ val_data = train_gen.flow_from_directory(
 # Found 72000 images belonging to 1 classes.
 test_data = test_gen.flow_from_directory(
     'C:/workspace/lotte/test',
-    target_size = (224, 224),
+    target_size = (128, 128),
     class_mode = None,
     batch_size = batch,
+    seed = seed,
     shuffle = False
 )
 
 #2. 모델
-eff = EfficientNetB4(include_top = False, input_shape=(224, 224, 3))
-eff.trainable = False
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import GlobalAveragePooling2D, Flatten, BatchNormalization, Dense, Activation, DepthwiseConv2D
+from tensorflow.keras.applications import VGG19, MobileNet
 
-model = Sequential()
-model.add(eff)
-model.add(Flatten())
-model.add(Dense(1000, activation = 'relu'))
-model.add(Dense(1000, activation = 'softmax'))
+mobile_net = MobileNet(weights="imagenet", include_top=False, input_shape=(128, 128, 3),)
+
+top_model = mobile_net.output
+top_model = Flatten()(top_model)
+top_model = Dense(1228, activation="relu")(top_model)
+top_model = Dense(1000, activation="softmax")(top_model)
+
+model = Model(inputs=mobile_net.input, outputs = top_model)
 
 #3. 컴파일 훈련
 model.compile(loss = 'sparse_categorical_crossentropy', optimizer = 'adam', metrics = ['acc'])

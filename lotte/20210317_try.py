@@ -14,9 +14,9 @@ from tensorflow.keras.applications.efficientnet import preprocess_input
 
 
 #데이터 지정 및 전처리
-x = np.load("C:/workspace/lotte/npy/x_224.npy",allow_pickle=True)
-x_pred = np.load('C:/workspace/lotte/test.npy',allow_pickle=True)
-y = np.load("C:/workspace/lotte/npy/y_224.npy",allow_pickle=True)
+x = np.load("C:/workspace/lotte/npy/x_val.npy",allow_pickle=True)
+x_pred = np.load('C:/workspace/lotte/x_test.npy',allow_pickle=True)
+y = np.load("C:/workspace/lotte/npy/y_val.npy",allow_pickle=True)
 # y1 = np.zeros((len(y), len(y.unique())))
 # for i, digit in enumerate(y):
 #     y1[i, digit] = 1

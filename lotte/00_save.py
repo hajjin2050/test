@@ -25,7 +25,7 @@ test_gen = ImageDataGenerator(
 # Found 39000 images belonging to 1000 classes.
 train_data = train_gen.flow_from_directory(
     'C:/workspace/lotte/train/',
-    target_size = (256, 256),
+    target_size = (128, 128),
     class_mode = 'categorical',
     batch_size = batch,
     seed = seed,
@@ -35,7 +35,7 @@ train_data = train_gen.flow_from_directory(
 # Found 9000 images belonging to 1000 classes.
 val_data = train_gen.flow_from_directory(
     'C:/workspace/lotte/train/',
-    target_size = (256, 256),
+    target_size = (128, 128),
     class_mode = 'categorical',
     batch_size = batch,
     seed = seed,
@@ -45,7 +45,7 @@ val_data = train_gen.flow_from_directory(
 # Found 72000 images belonging to 1 classes.
 test_data = test_gen.flow_from_directory(
     'C:/workspace/lotte/test/',
-    target_size = (256, 256),
+    target_size = (128, 128),
     class_mode = None,
     batch_size = batch,
     seed = seed,
