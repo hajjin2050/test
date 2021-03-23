@@ -43,7 +43,7 @@ test_gen = ImageDataGenerator(
 
 # Found 39000 images belonging to 1000 classes.
 train_data = train_gen.flow_from_directory(
-    'C:/workspace/lotte/train_new',
+    'C:/workspace/lotte/train_new2',
     target_size = (126, 126),
     class_mode = 'sparse',
     batch_size = batch,
@@ -53,7 +53,7 @@ train_data = train_gen.flow_from_directory(
 
 # Found 9000 images belonging to 1000 classes.
 val_data = train_gen.flow_from_directory(
-    'C:/workspace/lotte/train_new',
+    'C:/workspace/lotte/train_new2',
     target_size = (126, 126),
     class_mode = 'sparse',
     batch_size = batch,
@@ -74,12 +74,12 @@ test_data = test_gen.flow_from_directory(
 eff = EfficientNetB3(include_top = False, input_shape=(126, 126, 3))
 eff.trainable = True
 pretrained = eff.output
-globalpooling = GlobalAveragePooling2D()(pretrained)
-layer_2 = Dense(1000)(globalpooling)
-layer_2 = swish(layer_2)
+layer_2 = Dense(1000, activation='relu')(pretrained)
 layer_2 = GaussianDropout(dropout)(layer_2)
-output = Dense(1000, activation = 'softmax')(layer_2)
+globalpooling = GlobalAveragePooling2D()(layer_2)
+output = Dense(1000, activation = 'softmax')(globalpooling)
 model = Model(inputs = eff.input, outputs = output)
+
 #3. 컴파일 훈련
 model.compile(loss = 'sparse_categorical_crossentropy', optimizer = 'adam', metrics = ['sparse_categorical_accuracy'])
 model.fit(train_data, steps_per_epoch = np.ceil(39000/batch), validation_data= val_data, validation_steps= np.ceil(9000/batch),\
