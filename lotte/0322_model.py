@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 import os
-from tensorflow.keras.applications.efficientnet import EfficientNetB4,EfficientNetB3
+from tensorflow.keras.applications import ResNet50
+from tensorflow.keras.applications.efficientnet import EfficientNetB4,EfficientNetB0,EfficientNetB7
 from tensorflow.keras.applications.efficientnet import preprocess_input
 from tensorflow.keras.preprocessing.image import ImageDataGenerator, load_img
 from tensorflow.keras.models import Sequential, load_model, Model
@@ -9,10 +10,9 @@ from tensorflow.keras.layers import Dense, Conv2D, MaxPooling2D, BatchNormalizat
 from tensorflow.keras.activations import swish
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 from scipy import stats
-
-#0. 변수
+from cutmix_keras import CutMixImageDataGenerator
 filenum = 5
-batch = 12
+batch = 6
 seed = 42
 dropout = 0.4
 epochs = 500
@@ -44,7 +44,7 @@ test_gen = ImageDataGenerator(
 # Found 39000 images belonging to 1000 classes.
 train_data = train_gen.flow_from_directory(
     'C:/workspace/lotte/train_new2',
-    target_size = (126, 126),
+    target_size = (120, 120),
     class_mode = 'sparse',
     batch_size = batch,
     seed = seed,
@@ -54,35 +54,44 @@ train_data = train_gen.flow_from_directory(
 # Found 9000 images belonging to 1000 classes.
 val_data = train_gen.flow_from_directory(
     'C:/workspace/lotte/train_new2',
-    target_size = (126, 126),
+    target_size = (120, 120),
     class_mode = 'sparse',
     batch_size = batch,
     seed = seed,
     subset = 'validation'
 )
 
+# train_data = CutMixImageDataGenerator(
+#     generator1=train_generator1,
+#     generator2=train_generator2,
+#     img_size=(120),
+#     batch_size=batch,
+# )
 # Found 72000 images belonging to 1 classes.
 test_data = test_gen.flow_from_directory(
     'C:/workspace/lotte/test_new',
-    target_size = (126, 126),
+    target_size = (120, 120),
     class_mode = None,
     batch_size = batch,
     shuffle = False
 )
 
 #2. 모델
-eff = EfficientNetB3(include_top = False, input_shape=(126, 126, 3))
-eff.trainable = True
-pretrained = eff.output
-layer_2 = Dense(1000, activation='relu')(pretrained)
-layer_2 = GaussianDropout(dropout)(layer_2)
-globalpooling = GlobalAveragePooling2D()(layer_2)
-output = Dense(1000, activation = 'softmax')(globalpooling)
-model = Model(inputs = eff.input, outputs = output)
+#2. 모델
+eff = EfficientNetB7(include_top = False, input_shape=(120 ,120, 3))
+eff.trainable = False
 
+a = eff.output
+a = GlobalAveragePooling2D() (a)
+a = Flatten() (a)
+a = Dense(4048, activation= 'swish') (a)
+a = Dropout(0.2) (a)
+a = Dense(1000, activation= 'softmax') (a)
+
+model = Model(inputs = eff.input, outputs = a)
 #3. 컴파일 훈련
 model.compile(loss = 'sparse_categorical_crossentropy', optimizer = 'adam', metrics = ['sparse_categorical_accuracy'])
-model.fit(train_data, steps_per_epoch = np.ceil(39000/batch), validation_data= val_data, validation_steps= np.ceil(9000/batch),\
+model.fit(train_data, steps_per_epoch = np.ceil(39000/batch), validation_steps= np.ceil(9000/batch),\
     epochs = epochs, callbacks = [es, cp, lr])
 
 model = load_model(model_path)
@@ -100,7 +109,7 @@ for tta in range(50):
     temp = np.transpose(result)
     temp_mode = stats.mode(temp, axis = 1).mode
     sub.loc[:, 'prediction'] = temp_mode
-    sub.to_csv(save_folder + '/sample_{0:03}_{1:02}.csv'.format(filenum, (tta+1)), index = False)
+    sub.to_csv(save_folder + '/sample1_{0:03}_{1:02}.csv'.format(filenum, (tta+1)), index = False)
     temp_count = stats.mode(temp, axis = 1).count
     for i, count in enumerate(temp_count):
         if count < tta/2.:
@@ -121,11 +130,11 @@ for tta in range(50):
     i = 0
     for percent in temp_percent:
         count = 0
-        if percent < 0.3:
+        if percent < 0.5:
             print(f'{i} 번째 테스트 이미지는 {percent}% 의 정확도를 가짐')
             count += 1
         i += 1
     print(f'{tta+1} ')
     print(f'{tta+1} 번째 제출 파일 저장하는 중')
     sub.loc[:, 'prediction'] = temp_sub
-    sub.to_csv(save_folder + '/sample_{0:03}_{1:02}.csv'.format(filenum, (tta+1)), index = False)
+    sub.to_csv(save_folder + '/sample_final_{0:03}_{1:02}.csv'.format(filenum, (tta+1)), index = False)
